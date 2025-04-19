@@ -7,5 +7,4 @@ export abstract class AuthDatasource {
   // abstract login()
   
   abstract register(registerUserDto: RegisterUserDto): Promise<UserEntity>;
-  
 }

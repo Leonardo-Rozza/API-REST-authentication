@@ -1,3 +1,9 @@
-export * from "./dtos/auth/register-user.dto";
+export * from "./dtos/auth/register-user.dto.js";
 
-export * from "./entities/UserEntity";
+export * from "./errors/custom.error.js"
+
+export * from "./entities/UserEntity.js";
+
+export * from "./repositories/auth.repository.js";
+
+export * from "./datasources/auth.datasource.js";

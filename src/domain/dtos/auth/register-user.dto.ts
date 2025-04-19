@@ -1,4 +1,4 @@
-import { Validators } from "../../../config";
+import { Validators } from "../../../config/validators.js";
 
 
 export class RegisterUserDto {
@@ -23,8 +23,4 @@ export class RegisterUserDto {
       new RegisterUserDto(name, email, password),
     ];
   }
-
-
-
-
 }
