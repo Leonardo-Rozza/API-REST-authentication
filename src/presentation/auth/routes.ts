@@ -1,7 +1,8 @@
-import { Router } from "express";
+import { Router} from "express";
 import { AuthController } from "./controller.js"; 
 import { AuthRepositoryImpl } from "../../infrastructure/index.js"; 
 import { AuthDatasourceImpl } from "../../infrastructure/index.js"; 
+import { AuthMiddleware } from "../middlewares/auth.middlewares.js";
 
 export class AuthRoutes{
   static get routes(): Router {
@@ -14,12 +15,15 @@ export class AuthRoutes{
     
     router.post("/login", controller.loginUser);
 
-    router.post("/register", async (req, res) => {
-      try {
-        await controller.registerUser(req, res);
-      } catch (error) {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+    router.post("/register", controller.registerUser);
+
+    router.get("/", async (req, res, next) => {
+        try {
+            await AuthMiddleware.validateJWT(req, res, next);
+            controller.getUser(req, res, next);
+        } catch (error) {
+            next(error);
+        }
     });
 
     return router;

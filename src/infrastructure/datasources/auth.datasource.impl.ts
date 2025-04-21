@@ -1,6 +1,6 @@
 import { BcryptAdapter } from '../../config/index.js';
 import { UserModel } from '../../data/mongodb/index.js';
-import { RegisterUserDto, AuthDatasource, UserEntity, CustomError } from '../../domain/index.js';
+import { RegisterUserDto, AuthDatasource, UserEntity, CustomError, LoginUserDto } from '../../domain/index.js';
 import { UserMapper } from '../mappers/user.mapper.js';
 
 
@@ -14,7 +14,7 @@ export class AuthDatasourceImpl implements AuthDatasource{
     private readonly hashPassword: HashFunction = BcryptAdapter.hash,
     private readonly comparePassword: CompareFunction = BcryptAdapter.compare,
   ) { }
-  
+
  async register(registerUserDto: RegisterUserDto): Promise<UserEntity> {
     
    const { name, email, password } = registerUserDto;
@@ -43,5 +43,26 @@ export class AuthDatasourceImpl implements AuthDatasource{
 
      throw CustomError.internalServerError();
    }
+  }
+
+  async login(loginUserDto: LoginUserDto): Promise<UserEntity> {
+    const { email, password } = loginUserDto;
+    
+    try {
+      const user = await UserModel.findOne({ email });
+      if (!user) throw CustomError.badRequest("El correo no existe");
+
+      const isMatching = this.comparePassword(password, user.password);
+      if (!isMatching) throw CustomError.badRequest("La contraseña es incorrecta");
+
+      return UserMapper.userEntityFromObject(user);
+
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+
+      throw CustomError.internalServerError();
+    }
   }
 }

@@ -1,5 +1,8 @@
-import { Request, Response } from 'express';
-import { AuthRepository, CustomError, RegisterUserDto } from '../../domain/index.js';
+import { Request, Response, RequestHandler } from 'express';
+import { AuthRepository, CustomError, LoginUserDto, RegisterUser, RegisterUserDto } from '../../domain/index.js';
+import { JwtAdapter } from '../../config/jwt.js';
+import { UserModel } from '../../data/mongodb/index.js';
+import { LoginUser } from '../../domain/uses-cases/auth/login-user.use-case.js';
 
 
 export class AuthController {
@@ -15,19 +18,58 @@ export class AuthController {
    } 
   }
 
+  registerUser:RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    const [error, registerUserDto] = RegisterUserDto.create(req.body);
+    if (error) {
+      res.status(400).json({ error });
+      return;
+    }
 
+    new RegisterUser(this.authRepository)
+      .execute(registerUserDto!)
+      .then(data => res.json(data))
+      .catch(error => this.handleError(error, res));
+  }
 
-  registerUser = async (req: Request, res: Response) => {
+  /*
+    registerUser = (req: Request, res: Response) => {
     const [error, registerUserDto] = RegisterUserDto.create(req.body);
     if (error) return res.status(400).json({ error });
     
     this.authRepository.register(registerUserDto!)
-      .then(user => res.json(user))
-      .catch(error =>  this.handleError(error, res));
+      .then(async (user) => {
+        res.json({
+          user,
+          token: await JwtAdapter.generateToken({ id: user.id}),
+        })
+      })
+      .catch(error => this.handleError(error, res));
+  }
+  */
 
+  loginUser: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const [error, loginUserDto] = LoginUserDto.create(req.body);
+      if (error) {
+        res.status(400).json({ error });
+        return;
+      }
+
+      const user = await new LoginUser(this.authRepository).execute(loginUserDto!);
+      const token = await JwtAdapter.generateToken({ id: user.id });
+      res.json({ user, token });
+    } catch (error) {
+      this.handleError(error, res);
+    }
   }
 
-  loginUser = async (req: Request, res: Response) => {
-    res.json({ message: "LoginUser controller" });
+  getUser: RequestHandler = (req: Request, res: Response) => {
+    UserModel.find()
+      .then(users => res.json({
+        //users,
+        token: req.body.payload,
+      }))
+      .catch(error => res.status(500).json({ error: "Internal Server Error" }));
+
   }
 }
